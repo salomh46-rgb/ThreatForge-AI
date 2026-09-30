@@ -44,3 +44,20 @@ resource "aws_s3_bucket_public_access_block" "guard" {
     assert res.passed is True
     assert res.critical_count == 0
     assert "PASSED" in res.verdict
+
+def test_ci_gate_passes_on_project_docker_compose():
+    from pathlib import Path
+    compose_path = Path(__file__).resolve().parent.parent.parent / "docker-compose.yml"
+    assert compose_path.exists()
+    content = compose_path.read_text(encoding="utf-8")
+    req = CIGateRequest(
+        raw_code=content,
+        format="compose",
+        fail_on="CRITICAL",
+        min_score=70
+    )
+    res = evaluate_ci_gate(req)
+    assert res.passed is True
+    assert res.critical_count == 0
+    assert res.security_score >= 70
+    assert "PASSED" in res.verdict

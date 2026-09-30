@@ -2,6 +2,12 @@ import sys
 import argparse
 import json
 from pathlib import Path
+
+# Ensure UTF-8 output encoding across all operating systems
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8")
 from app.parsers.generic_parser import parse_architecture
 from app.engine.stride_rules import evaluate_stride_rules
 from app.core.graph import build_graph_and_find_paths

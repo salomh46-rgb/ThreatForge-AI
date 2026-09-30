@@ -54,3 +54,5 @@ frontend/.tmp/
 *~
 .DS_Store
 Thumbs.db
+*.sarif
+

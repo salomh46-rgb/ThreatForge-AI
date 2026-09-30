@@ -32,12 +32,22 @@ def parse_docker_compose(content: str) -> Tuple[List[NodeModel], List[EdgeModel]
 
         for p in ports_raw:
             port_str = str(p)
+            is_localhost = ("127.0.0.1" in port_str) or ("localhost" in port_str)
             # Match formats: "80:80", "0.0.0.0:5432:5432", "8080"
             m = re.findall(r"(\d+)", port_str)
             if m:
                 host_port = int(m[0]) if len(m) > 1 else int(m[-1])
                 ports.append(host_port)
-                is_public = True
+                if not is_localhost:
+                    is_public = True
+
+        # Support internal expose declarations
+        expose_raw = config.get("expose", [])
+        for exp in expose_raw:
+            exp_str = str(exp)
+            m = re.findall(r"(\d+)", exp_str)
+            if m:
+                ports.append(int(m[0]))
 
         if is_public:
             has_public_port = True
@@ -64,8 +74,8 @@ def parse_docker_compose(content: str) -> Tuple[List[NodeModel], List[EdgeModel]
         elif any(cache in image or cache in name_lower for cache in ["redis", "memcached", "valkey"]):
             node_type = NodeType.CACHE
             trust_zone = TrustZone.DATA_TIER
-        elif any(lb in image or lb in name_lower for lb in ["nginx", "caddy", "traefik", "gateway", "proxy", "envoy"]):
-            node_type = NodeType.LOAD_BALANCER if "proxy" in name_lower or "nginx" in name_lower else NodeType.API_GATEWAY
+        elif any(lb in image or lb in name_lower for lb in ["nginx", "caddy", "traefik", "gateway", "proxy", "envoy", "frontend", "web", "ui"]):
+            node_type = NodeType.LOAD_BALANCER if any(x in name_lower for x in ["proxy", "nginx", "frontend", "web", "ui"]) else NodeType.API_GATEWAY
             trust_zone = TrustZone.DMZ
         elif any(auth in image or auth in name_lower for auth in ["keycloak", "auth", "authentik", "oauth"]):
             node_type = NodeType.AUTH_SERVICE
