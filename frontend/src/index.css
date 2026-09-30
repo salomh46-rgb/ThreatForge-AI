@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --cyber-bg: #07090e;
+    --cyber-card: #0d121d;
+    --cyber-border: #1e293b;
+    --cyber-glow-blue: rgba(56, 189, 248, 0.15);
+    --cyber-glow-red: rgba(239, 68, 68, 0.2);
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    background-color: #07090e;
+    color: #f1f5f9;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    overflow-x: hidden;
+  }
+
+  #root {
+    width: 100vw;
+    height: 100vh;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    border: none;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+/* Tactical Grid Background */
+.tactical-grid {
+  background-size: 32px 32px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+}
+
+/* Pulsing red attack path animation */
+@keyframes attackPulse {
+  0% {
+    stroke-dashoffset: 24;
+    stroke: #ef4444;
+    filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.8));
+  }
+  50% {
+    stroke: #f97316;
+    filter: drop-shadow(0 0 10px rgba(249, 115, 22, 0.9));
+  }
+  100% {
+    stroke-dashoffset: 0;
+    stroke: #ef4444;
+    filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.8));
+  }
+}
+
+.attack-path-active {
+  stroke-dasharray: 6 3;
+  animation: attackPulse 1.2s linear infinite !important;
+  stroke-width: 3px !important;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0b0f19;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
