@@ -19,6 +19,10 @@ import { CyberNode } from './components/CyberNode';
 import { ThreatPanel } from './components/ThreatPanel';
 import { InputModal } from './components/InputModal';
 import { PatchModal } from './components/PatchModal';
+import { CIGateModal } from './components/CIGateModal';
+import { ComplianceModal } from './components/ComplianceModal';
+import { RiskAcceptModal } from './components/RiskAcceptModal';
+import { PolicyModal } from './components/PolicyModal';
 import type {
   ArchitectureTopology,
   ThreatFinding,
@@ -32,7 +36,6 @@ const nodeTypes = {
   cyberNode: CyberNode
 };
 
-// Fallback initial preset in case backend is loading
 const DEFAULT_COMPOSE = `version: '3.8'
 
 services:
@@ -68,7 +71,6 @@ services:
       - "6379:6379" # CRITICAL: Redis exposed without requirepass or TLS!
 `;
 
-// Calculate neat grid / layered layout based on trust zones
 function layoutNodes(nodes: NodeModel[]): Node[] {
   const zoneY: Record<string, number> = {
     'Public Internet': 50,
@@ -84,8 +86,6 @@ function layoutNodes(nodes: NodeModel[]): Node[] {
     const y = zoneY[n.trust_zone] || 400;
     const countInZone = zoneCount[n.trust_zone] || 0;
     zoneCount[n.trust_zone] = countInZone + 1;
-
-    // Offset X coordinate
     const x = 120 + countInZone * 270;
 
     return {
@@ -141,9 +141,15 @@ function MainFlow() {
   const [currentCode, setCurrentCode] = useState<string>(DEFAULT_COMPOSE);
   const [loading, setLoading] = useState(false);
 
-  // Modals & Panels state
+  // Modals state
   const [isInputOpen, setIsInputOpen] = useState(false);
+  const [isCIGateOpen, setIsCIGateOpen] = useState(false);
+  const [isComplianceOpen, setIsComplianceOpen] = useState(false);
+  const [isRiskModalOpen, setIsRiskModalOpen] = useState(false);
+  const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
+
   const [selectedThreat, setSelectedThreat] = useState<ThreatFinding | null>(null);
+  const [threatForRisk, setThreatForRisk] = useState<ThreatFinding | null>(null);
   const [activePath, setActivePath] = useState<AttackPath | null>(null);
   const [isSimulatingAll, setIsSimulatingAll] = useState(false);
 
@@ -151,7 +157,6 @@ function MainFlow() {
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const reactFlow = useReactFlow();
 
-  // Run Backend Analysis
   const runAnalysis = async (code: string, format = 'auto') => {
     setLoading(true);
     try {
@@ -190,18 +195,15 @@ function MainFlow() {
     }
   };
 
-  // Load Presets on Mount
   useEffect(() => {
     fetch('/api/presets')
       .then((res) => res.json())
       .then((data) => setPresets(data))
       .catch((err) => console.error('Failed to load presets:', err));
 
-    // Run initial analysis with default preset
     runAnalysis(DEFAULT_COMPOSE, 'compose');
   }, []);
 
-  // Load Preset Details
   const handleSelectPreset = async (presetId: string) => {
     try {
       const res = await fetch(`/api/presets/${presetId}`);
@@ -215,7 +217,6 @@ function MainFlow() {
     }
   };
 
-  // Red Team Attack Simulation
   const handleSimulatePath = (path: AttackPath) => {
     if (activePath?.id === path.id) {
       setActivePath(null);
@@ -241,7 +242,6 @@ function MainFlow() {
     if (topology) setEdges(layoutEdges(topology.edges, null));
   };
 
-  // Focus node in view
   const handleFocusNode = (nodeId: string) => {
     const node = nodes.find((n) => n.id === nodeId);
     if (node) {
@@ -249,7 +249,11 @@ function MainFlow() {
     }
   };
 
-  // Export CISO Markdown Report
+  const handleAcceptRiskClick = (threat: ThreatFinding) => {
+    setThreatForRisk(threat);
+    setIsRiskModalOpen(true);
+  };
+
   const handleExport = async () => {
     if (!topology) return;
     try {
@@ -264,7 +268,7 @@ function MainFlow() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `ThreatForge_Report_${Date.now()}.md`);
+      link.setAttribute('download', `ThreatForge_Enterprise_Report_${Date.now()}.md`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -282,11 +286,17 @@ function MainFlow() {
         onSimulateAll={handleSimulateAll}
         isSimulating={isSimulatingAll || !!activePath}
         onResetAttack={handleResetAttack}
-        loading={loading}
+        onOpenCIGate={() => setIsCIGateOpen(true)}
+        onOpenCompliance={() => setIsComplianceOpen(true)}
+        onOpenPolicies={() => setIsPolicyModalOpen(true)}
+        onOpenRiskAccept={() => {
+          setThreatForRisk(topology?.threats[0] || null);
+          setIsRiskModalOpen(true);
+        }}
       />
 
       <div className="flex-1 flex relative overflow-hidden">
-        {/* React Flow Canvas */}
+        {/* Canvas */}
         <div className="flex-1 h-full relative tactical-grid">
           {/* Trust Zone Floating Labels */}
           <div className="absolute left-6 top-4 z-10 flex flex-col gap-28 pointer-events-none opacity-40 font-mono text-[11px] uppercase tracking-widest text-slate-400">
@@ -334,7 +344,7 @@ function MainFlow() {
           </ReactFlow>
         </div>
 
-        {/* Right Threat Panel */}
+        {/* Threat Panel */}
         {topology && (
           <ThreatPanel
             topology={topology}
@@ -342,11 +352,12 @@ function MainFlow() {
             onSimulatePath={handleSimulatePath}
             activePathId={activePath?.id || null}
             onFocusNode={handleFocusNode}
+            onAcceptRisk={handleAcceptRiskClick}
           />
         )}
       </div>
 
-      {/* Input Modal */}
+      {/* Modals */}
       <InputModal
         isOpen={isInputOpen}
         onClose={() => setIsInputOpen(false)}
@@ -357,8 +368,30 @@ function MainFlow() {
         loading={loading}
       />
 
-      {/* Remediation Patch Diff Modal */}
       <PatchModal threat={selectedThreat} onClose={() => setSelectedThreat(null)} />
+
+      <CIGateModal
+        isOpen={isCIGateOpen}
+        onClose={() => setIsCIGateOpen(false)}
+        currentCode={currentCode}
+      />
+
+      <ComplianceModal
+        isOpen={isComplianceOpen}
+        onClose={() => setIsComplianceOpen(false)}
+        currentCode={currentCode}
+      />
+
+      <RiskAcceptModal
+        isOpen={isRiskModalOpen}
+        onClose={() => setIsRiskModalOpen(false)}
+        threat={threatForRisk}
+      />
+
+      <PolicyModal
+        isOpen={isPolicyModalOpen}
+        onClose={() => setIsPolicyModalOpen(false)}
+      />
     </div>
   );
 }

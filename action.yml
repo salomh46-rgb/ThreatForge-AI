@@ -1,0 +1,45 @@
+name: "ThreatForge AI Security Gate"
+description: "Scan Terraform, Docker Compose, and Mermaid cloud architectures for STRIDE & MITRE ATT&CK threats in CI/CD."
+author: "ThreatForge AI"
+branding:
+  icon: "shield"
+  color: "blue"
+
+inputs:
+  file:
+    description: "Path to architecture file (e.g., main.tf or docker-compose.yml)"
+    required: true
+  fail-on:
+    description: "Threat severity threshold that breaks the build (CRITICAL, HIGH, MEDIUM, LOW)"
+    required: false
+    default: "CRITICAL"
+  min-score:
+    description: "Minimum security score required to pass (0-100)"
+    required: false
+    default: "70"
+  sarif-file:
+    description: "File path to save SARIF report"
+    required: false
+    default: "threatforge-results.sarif"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Install dependencies
+      shell: bash
+      run: |
+        pip install fastapi pydantic pyyaml networkx httpx
+
+    - name: Run ThreatForge Scanner
+      shell: bash
+      run: |
+        PYTHONPATH=${{ github.action_path }}/backend python -m app.cli scan \
+          "${{ inputs.file }}" \
+          --fail-on "${{ inputs.fail-on }}" \
+          --min-score "${{ inputs.min-score }}" \
+          --sarif "${{ inputs.sarif-file }}"

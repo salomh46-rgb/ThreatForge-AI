@@ -4,7 +4,9 @@ import {
   Shield,
   ChevronRight,
   Wrench,
-  Crosshair
+  Crosshair,
+  ShieldAlert,
+  Ticket
 } from 'lucide-react';
 import type { ArchitectureTopology, ThreatFinding, AttackPath, ThreatSeverity } from '../types';
 
@@ -14,6 +16,7 @@ interface ThreatPanelProps {
   onSimulatePath: (path: AttackPath) => void;
   activePathId: string | null;
   onFocusNode: (nodeId: string) => void;
+  onAcceptRisk: (threat: ThreatFinding) => void;
 }
 
 export const ThreatPanel: React.FC<ThreatPanelProps> = ({
@@ -21,7 +24,8 @@ export const ThreatPanel: React.FC<ThreatPanelProps> = ({
   onSelectThreat,
   onSimulatePath,
   activePathId,
-  onFocusNode
+  onFocusNode,
+  onAcceptRisk
 }) => {
   const [activeTab, setActiveTab] = useState<'threats' | 'paths'>('threats');
   const [selectedSeverity, setSelectedSeverity] = useState<string>('ALL');
@@ -41,6 +45,21 @@ export const ThreatPanel: React.FC<ThreatPanelProps> = ({
         return 'bg-amber-500/20 text-amber-400 border-amber-500/40';
       case 'LOW':
         return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40';
+    }
+  };
+
+  const handleExportJira = async (threat: ThreatFinding) => {
+    try {
+      const res = await fetch('/api/integrations/jira/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ threat, project_key: 'SEC' })
+      });
+      const data = await res.json();
+      navigator.clipboard.writeText(JSON.stringify(data, null, 2));
+      alert('Jira Issue payload copied to clipboard! Ready to paste into Jira REST API or issue importer.');
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -152,17 +171,33 @@ export const ThreatPanel: React.FC<ThreatPanelProps> = ({
                       {threat.description}
                     </p>
 
-                    {/* Remediation Button */}
-                    <div className="pt-2 border-t border-slate-800/60 flex items-center justify-between">
-                      <div className="text-[10px] text-slate-500 font-mono">
-                        Blast: {threat.blast_radius_nodes.length} node(s)
+                    {/* Action Controls */}
+                    <div className="pt-2 border-t border-slate-800/60 flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => onAcceptRisk(threat)}
+                          className="px-2 py-1 rounded text-[10px] font-medium bg-amber-950/40 hover:bg-amber-900/40 text-amber-300 border border-amber-800/40 flex items-center gap-1 transition-all"
+                          title="Sign off risk exception for audit"
+                        >
+                          <ShieldAlert className="w-3 h-3 text-amber-400" />
+                          Accept Risk
+                        </button>
+                        <button
+                          onClick={() => handleExportJira(threat)}
+                          className="px-2 py-1 rounded text-[10px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 flex items-center gap-1 transition-all"
+                          title="Copy Jira issue JSON"
+                        >
+                          <Ticket className="w-3 h-3 text-blue-400" />
+                          Jira
+                        </button>
                       </div>
+
                       <button
                         onClick={() => onSelectThreat(threat)}
                         className="px-2.5 py-1 rounded-md text-[11px] font-medium bg-cyan-950/60 hover:bg-cyan-900/60 text-cyan-300 border border-cyan-700/50 flex items-center gap-1.5 transition-all"
                       >
                         <Wrench className="w-3 h-3 text-cyan-400" />
-                        View Patch Diff
+                        View Diff
                       </button>
                     </div>
                   </div>

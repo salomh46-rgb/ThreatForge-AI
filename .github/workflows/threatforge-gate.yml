@@ -1,0 +1,39 @@
+name: "ThreatForge Architecture Security Gate"
+
+on:
+  pull_request:
+    branches: [main, master]
+  push:
+    branches: [main, master]
+
+jobs:
+  threat-model:
+    name: "STRIDE & MITRE Threat Audit"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install ThreatForge dependencies
+        run: |
+          pip install -r backend/requirements.txt
+
+      - name: Run Architecture Scan & Quality Gate
+        run: |
+          PYTHONPATH=backend python -m app.cli scan docker-compose.yml --fail-on CRITICAL --min-score 70 --sarif results.sarif
+
+      - name: Upload SARIF to GitHub Advanced Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: results.sarif
