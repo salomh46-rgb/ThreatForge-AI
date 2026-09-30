@@ -1,6 +1,7 @@
 import httpx
 from typing import Dict, Any, Optional
 from app.core.models import ThreatFinding
+from app.core.security import validate_webhook_url
 
 def format_jira_issue(threat: ThreatFinding, project_key: str = "SEC") -> Dict[str, Any]:
     description_text = f"""*ThreatForge AI Architecture Security Finding*
@@ -66,9 +67,12 @@ def format_slack_message(threat: ThreatFinding) -> Dict[str, Any]:
     }
 
 async def dispatch_webhook(webhook_url: str, payload: Dict[str, Any]) -> bool:
+    # Validate against SSRF (checks protocol, allowed domains, private IP blocking)
+    validated_url = validate_webhook_url(webhook_url)
+
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
-            res = await client.post(webhook_url, json=payload)
+            res = await client.post(validated_url, json=payload)
             return res.status_code in [200, 201, 204]
     except Exception:
         return False

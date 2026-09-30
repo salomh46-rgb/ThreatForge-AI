@@ -24,6 +24,8 @@ wheels/
 htmlcov/
 .venv/
 venv/
+*.db
+backend/data/*.db
 ENV/
 env/
 
