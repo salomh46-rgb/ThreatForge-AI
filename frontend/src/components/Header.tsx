@@ -23,6 +23,7 @@ interface HeaderProps {
   onOpenCompliance: () => void;
   onOpenPolicies: () => void;
   onOpenRiskAccept: () => void;
+  onOpenFirewall: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -35,7 +36,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenCIGate,
   onOpenCompliance,
   onOpenPolicies,
-  onOpenRiskAccept
+  onOpenRiskAccept,
+  onOpenFirewall
 }) => {
   const score = topology?.security_score ?? 100;
   const grade = topology?.summary.security_grade ?? 'A';
@@ -98,6 +100,14 @@ export const Header: React.FC<HeaderProps> = ({
         >
           <Sliders className="w-3.5 h-3.5 text-purple-400" />
           OPA Policies
+        </button>
+
+        <button
+          onClick={onOpenFirewall}
+          className="px-2.5 py-1.5 rounded-lg text-cyan-300 bg-cyan-950/60 border border-cyan-500/30 hover:bg-cyan-900/50 flex items-center gap-1.5 font-bold transition-all shadow-[0_0_10px_rgba(6,182,212,0.2)]"
+        >
+          <ShieldAlert className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
+          <span>AI Firewall v2</span>
         </button>
       </div>
 

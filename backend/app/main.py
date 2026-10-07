@@ -11,6 +11,7 @@ from app.api.ci import router as ci_router
 from app.api.compliance import router as compliance_router
 from app.api.integrations import router as integrations_router
 from app.api.policies import router as policies_router
+from app.api.firewall import router as firewall_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -51,6 +52,7 @@ app.include_router(ci_router)
 app.include_router(compliance_router)
 app.include_router(integrations_router)
 app.include_router(policies_router)
+app.include_router(firewall_router)
 
 # Immutable Security Audit Logs Endpoint
 @app.get("/api/audit/logs")

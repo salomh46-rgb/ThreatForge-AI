@@ -23,6 +23,7 @@ import { CIGateModal } from './components/CIGateModal';
 import { ComplianceModal } from './components/ComplianceModal';
 import { RiskAcceptModal } from './components/RiskAcceptModal';
 import { PolicyModal } from './components/PolicyModal';
+import { FirewallModal } from './components/FirewallModal';
 import type {
   ArchitectureTopology,
   ThreatFinding,
@@ -147,6 +148,7 @@ function MainFlow() {
   const [isComplianceOpen, setIsComplianceOpen] = useState(false);
   const [isRiskModalOpen, setIsRiskModalOpen] = useState(false);
   const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
+  const [isFirewallOpen, setIsFirewallOpen] = useState(false);
 
   const [selectedThreat, setSelectedThreat] = useState<ThreatFinding | null>(null);
   const [threatForRisk, setThreatForRisk] = useState<ThreatFinding | null>(null);
@@ -289,6 +291,7 @@ function MainFlow() {
         onOpenCIGate={() => setIsCIGateOpen(true)}
         onOpenCompliance={() => setIsComplianceOpen(true)}
         onOpenPolicies={() => setIsPolicyModalOpen(true)}
+        onOpenFirewall={() => setIsFirewallOpen(true)}
         onOpenRiskAccept={() => {
           setThreatForRisk(topology?.threats[0] || null);
           setIsRiskModalOpen(true);
@@ -391,6 +394,11 @@ function MainFlow() {
       <PolicyModal
         isOpen={isPolicyModalOpen}
         onClose={() => setIsPolicyModalOpen(false)}
+      />
+
+      <FirewallModal
+        isOpen={isFirewallOpen}
+        onClose={() => setIsFirewallOpen(false)}
       />
     </div>
   );
